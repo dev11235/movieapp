@@ -2,45 +2,70 @@ package ru.ed.android.movieapp;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.GridView;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class GridFragment extends Fragment {
+
+    private final String LOG_TAG = GridFragment.class.getSimpleName();
+
+    private ArrayAdapter<String> imageAdapter;
+
+    GridView gridView;
+    private Movie[] movies = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (savedInstanceState != null && savedInstanceState.containsKey("movies")) {
+            movies = (Movie[]) savedInstanceState.getParcelableArray("movies");
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArray("movies", movies);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
-        ArrayList<Integer> tst = new ArrayList<>();
-        tst.add(R.drawable.atesparkasi);
-        tst.add(R.drawable.experiment);
-        tst.add(R.drawable.instructor);
-        tst.add(R.drawable.interstellar);
-        tst.add(R.drawable.windiswatching);
-
-
-        ImageArrayAdapter<Integer> imageArrayAdapter = new ImageArrayAdapter(
-                getActivity(),
-                R.layout.poster,
-                R.id.poster_imageview,
-                tst);
+        if (movies == null) {
+            FetchMoviesTask fetchMoviesTask = new FetchMoviesTask();
+            fetchMoviesTask.execute();
+            try {
+                movies = fetchMoviesTask.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
         View rootView = inflater.inflate(R.layout.fragment_grid, container, false);
 
-        GridView gridView = (GridView) rootView.findViewById(R.id.movies_gridview);
-        gridView.setAdapter(imageArrayAdapter);
-        //gridView.setNumColumns(3);
-        //gridView.setHorizontalSpacing(0);
+        gridView = (GridView) rootView.findViewById(R.id.movies_gridview);
+        imageAdapter = new ImageArrayAdapter<>(
+                getActivity(),
+                R.layout.poster,
+                2);
+        gridView.setAdapter(imageAdapter);
+
+        for (Movie movie : movies) {
+            imageAdapter.add(movie.getImage());
+        }
 
         return rootView;
+    }
+
+    private void getPopularMovies() {
+
     }
 }
